@@ -23,7 +23,7 @@
     <junit.version>4.13.2</junit.version>
     <logback.version>1.4.14</logback.version>
     <eclipselink.version>4.0.2</eclipselink.version>
-    <postgresql.version>42.7.1</postgresql.version>
+    <postgresql.version>42.7.2</postgresql.version>
     <lombok.version>1.18.30</lombok.version>
 
     <!-- Plugin Versions -->
