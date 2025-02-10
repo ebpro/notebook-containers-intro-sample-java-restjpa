@@ -1,63 +1,74 @@
+version: "3.8"  # Adding explicit version for better compatibility
+
 services:
+  # Application service with Traefik integration
   app:
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.app.rule=PathPrefix(`/restjpa{regex:$$|/.*}`)
-      - traefik.http.services.app.loadbalancer.server.port=8080
+      - traefik.enable=true  # Enable Traefik for this service
+      - traefik.http.routers.app.rule=PathPrefix(`/restjpa{regex:$$|/.*}`)  # Route all /restjpa/* requests
+      - traefik.http.services.app.loadbalancer.server.port=8080  # Internal port for load balancing
     image: 'restjpa:latest'
     build:
       context: .
     depends_on:
-      - db:
-          condition: service_healthy
+      db:
+        condition: service_healthy  # Ensures database is ready before starting
     environment:
       - DATASOURCE_URL=jdbc:postgresql://db:5432/demo-db
       - DATASOURCE_USERNAME=dba
-      - DATASOURCE_PASSWORD=secret
+      - DATASOURCE_PASSWORD=secret  # Should use .env file for secrets
     ports:
-      - "8088:8080"
+      - "8088:8080"  # Direct access port (consider removing when using Traefik)
     networks:
-      - frontend
-      - backend
+      - frontend  # For Traefik communication
+      - backend   # For database communication
+    restart: unless-stopped  # Add restart policy for reliability
 
+  # PostgreSQL Database service
   db:
     image: 'postgres:15.2-alpine'
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Consider removing if external access isn't needed
     environment:
       - POSTGRES_USER=dba
-      - POSTGRES_PASSWORD=secret
+      - POSTGRES_PASSWORD=secret  # Should use .env file for secrets
       - POSTGRES_DB=demo-db
     volumes:
-      - restjpa-pg-data:/var/lib/postgresql/data
+      - restjpa-pg-data:/var/lib/postgresql/data  # Persistent storage
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U dba -d demo-db"]  # Improved healthcheck
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # Traefik reverse proxy service
   traefik:
     image: 'traefik:v2.9.8'
-    restart: 'unless-stopped'
+    restart: unless-stopped
     depends_on:
       - db
       - app
     ports:
-      - '10080:80'
-      - '18080:8080'
+      - '10080:80'    # HTTP entrypoint
+      - '18080:8080'  # Traefik dashboard
     volumes:
-      - '/var/run/docker.sock:/var/run/docker.sock:ro'
-      - './traefik/traefik.toml:/traefik.toml'
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'  # Docker socket for auto-discovery
+      - './traefik/traefik.toml:/traefik.toml'         # Traefik configuration
     networks:
       - frontend
+    security_opt:
+      - no-new-privileges:true  # Enhanced security
 
 volumes:
   restjpa-pg-data:
+    name: restjpa-pg-data  # Explicit volume naming
 
 networks:
   frontend:
     external: true
     name: restjpa_frontend
   backend:
+    name: restjpa_backend
+    internal: true  # Restrict external access

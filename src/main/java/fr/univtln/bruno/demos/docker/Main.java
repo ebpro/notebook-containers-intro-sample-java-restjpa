@@ -23,7 +23,7 @@ public class Main {
     // Base URI the Grizzly HTTP server will listen on
     public static final String BASE_URI = "http://0.0.0.0:8080/restjpa/";
 
-    public final static EntityManagerFactory emf;
+    public static final EntityManagerFactory emf;
     static {
         Map<String, String> env = System.getenv();
         Map<String, Object> configOverrides = new HashMap<>();
