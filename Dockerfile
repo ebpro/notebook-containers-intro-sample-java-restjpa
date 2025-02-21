@@ -18,7 +18,7 @@ WORKDIR /app
 LABEL maintainer="Emmanuel BRUNO <emmanuel.bruno@univ-tln.fr>"
 LABEL version="0.1.0"
 LABEL description="REST JPA Demo Application"
-LABEL org.opencontainers.image.source="https://github.com/yourusername/restjpa"
+LABEL org.opencontainers.image.source="https://github.com/ebpro/notebook-containers-intro-sample-java-restjpa/"
 LABEL org.opencontainers.image.licenses="MIT"
 
 # Create non-root user
