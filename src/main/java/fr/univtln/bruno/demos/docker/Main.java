@@ -1,97 +1,57 @@
 package fr.univtln.bruno.demos.docker;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
-import lombok.extern.java.Log;
+
+import fr.univtln.bruno.demos.docker.adapter.rest.GlobalExceptionMapper;
+import fr.univtln.bruno.demos.docker.config.AppBinder;
+import fr.univtln.bruno.demos.docker.config.AppConfig;
+
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
-import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
-import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * Main class.
+ * Main class to start the RESTful Java application using Jersey and Grizzly.
+ * Configures the application components and starts the HTTP server.
  *
+ * Usage: Run the main method to start the server at the specified BASE_URI.
+ * The server hosts REST endpoints for managing persons and health checks.
+ * Wiring is done manually in this class using AppConfig.
+ * Shuts down gracefully on JVM exit, closing EntityManagerFactory and
+ * DataSource.
+ *
+ * @See PersonResource
+ * @See HealthResource
+ * @See AppConfig
  */
-@Log
+@Slf4j
 public class Main {
-    // Base URI the Grizzly HTTP server will listen on
+
     public static final String BASE_URI = "http://0.0.0.0:8080/restjpa/";
 
-    public static final EntityManagerFactory emf;
-    static {
-        Map<String, String> env = System.getenv();
-        Map<String, Object> configOverrides = new HashMap<>();
-        for (String envName : env.keySet()) {
-            if (envName.contains("DATASOURCE_URL")) {
-                log.info("Override with env. var. :"+envName);
-                configOverrides.put("jakarta.persistence.jdbc.url", env.get(envName));
-            }
-            if (envName.contains("DATASOURCE_USERNAME")) {
-                log.info("Override with env. var. :"+envName);
-                configOverrides.put("jakarta.persistence.jdbc.user", env.get(envName));
-            }
-            if (envName.contains("DATASOURCE_PASSWORD")) {
-                log.info("Override with env. var. :"+envName);
-                configOverrides.put("jakarta.persistence.jdbc.password", env.get(envName));
-            }
-        }
-        emf =
-                Persistence.createEntityManagerFactory("restjpa-pu", configOverrides);
-    }
-
-    /**
-     * Starts Grizzly HTTP server exposing JAX-RS resources defined in this application.
-     * @return Grizzly HTTP server.
-     */
     public static HttpServer startServer() {
-        // create a resource config that scans for JAX-RS resources and providers
-        // in test package
         final ResourceConfig rc = new ResourceConfig()
-                .packages("fr.univtln.bruno.demos.docker")
-                .register(
-                new LoggingFeature(
-                        Logger.getLogger(LoggingFeature.DEFAULT_LOGGER_NAME),
-                        Level.INFO,
-                        LoggingFeature.Verbosity.PAYLOAD_ANY,
-                        1000
-                )
-        );
+                .packages("fr.univtln.bruno.demos.docker") // Scans EVERYTHING in this package
+                .register(new AppBinder());
 
-        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
-        
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                log.info("Stopping server..");
-                server.shutdown();//.stop() has been deprecated
-            }
-        }, "shutdownHook"));
-
-        // create and start a new instance of grizzly http server
-        // exposing the Jersey application at BASE_URI
-        return server;
+        // This tells Jersey to use the AppBinder to configure the internal HK2 locator
+        return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
     }
 
-    /**
-     * Main method.
-     * @param args
-     * @throws IOException
-     */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+
         try {
             startServer();
+            log.info("Server started at {}", BASE_URI);
             log.info("Press CTRL^C to exit..");
             Thread.currentThread().join();
         } catch (Exception e) {
-            log.severe("There was an error while starting Grizzly HTTP server."+ e);
+            log.error("Server startup failed", e);
+            System.exit(1);
         }
-
     }
 }
-

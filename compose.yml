@@ -2,39 +2,50 @@ services:
   # Database service
   db:
     image: 'postgres:15.2-alpine'
+
     environment:
-      - POSTGRES_USER=dba
-      - POSTGRES_PASSWORD=secret  # Consider using .env file for secrets
-      - POSTGRES_DB=demo-db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
     volumes:
       - restjpa-pg-data:/var/lib/postgresql/data
     networks:
       - backend
     healthcheck:  # Adding healthcheck for better orchestration
-      test: ["CMD-SHELL", "pg_isready -U dba -d demo-db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # Application service
   app:
-    image: 'restjpa:latest'
-    build: 
+    image: 'docker.io/brunoe/restjpa:0.1.0'
+    build:
       context: .
       dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy  # Wait for db to be healthy before starting
     environment:
-      - DATASOURCE_URL=jdbc:postgresql://db:5432/demo-db
-      - DATASOURCE_USERNAME=dba
-      - DATASOURCE_PASSWORD=secret  # Consider using .env file for secrets
+      - MAVEN_PROFILE=prod
+      - DB_URL=jdbc:postgresql://db:5432/${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_SCHEMA_ACTION=${DB_SCHEMA_ACTION}
+      - DB_MAX_POOL=${DB_MAX_POOL}
+      - DB_MIN_IDLE=${DB_MIN_IDLE}
     ports:
       - "8088:8080"
     networks:
       - frontend
       - backend
     restart: unless-stopped  # Adding restart policy for better reliability
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/restjpa/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 # Named volumes for persistent data
 volumes:

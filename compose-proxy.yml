@@ -3,7 +3,7 @@ services:
   app:
     labels:
       - traefik.enable=true  # Enable Traefik for this service
-      - traefik.http.routers.app.rule=PathPrefix(`/restjpa)  # Route all /restjpa/* requests
+      - traefik.http.routers.app.rule=PathPrefix(`/restjpa`)  # Route all /restjpa/* requests
       - traefik.http.services.app.loadbalancer.server.port=80
     image: 'restjpa:latest'
     build:
@@ -47,7 +47,7 @@ services:
       - '10443:443'   # HTTPS entrypoint
       - '18080:8080'  # Traefik dashboard
     networks:
-      - frontend      
+      - frontend
     restart: unless-stopped
     command:
       - --api.dashboard=true
@@ -61,7 +61,7 @@ services:
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entryPoints.web.http.redirections.entrypoint.scheme=https
       #- --entrypoints.websecure.address=:443
-      # - --entrypoints.websecure.asDefault=true 
+      # - --entrypoints.websecure.asDefault=true
       #- --entrypoints.websecure.http.tls.certresolver=myresolver
       #- --certificatesresolvers.myresolver.acme.email=mail@example.com
       #- --certificatesresolvers.myresolver.acme.tlschallenge=true

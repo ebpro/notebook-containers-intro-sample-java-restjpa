@@ -1,27 +1,43 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
-    version="3.0">
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
+             version="3.2">
+
     <persistence-unit name="restjpa-pu">
-        <description>RestJPA Application Persistance Unit</description>
-        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+
+        <!-- Use Hibernate as JPA provider -->
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <!-- Explicitly list entity classes -->
+        <class>fr.univtln.bruno.demos.docker.adapter.persistence.PersonEntity</class>
 
         <properties>
-            <!-- database connection -->
-            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver" />
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost/restjpa" />
-            <property name="jakarta.persistence.jdbc.user" value="restjpa" />
-            <property name="jakarta.persistence.jdbc.password" value="restjpa" />
+            <!-- JDBC connection (defaults can be overridden at runtime via env) -->
+            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="${DB_URL}"/>
+            <property name="jakarta.persistence.jdbc.user" value="${DB_USER}"/>
+            <property name="jakarta.persistence.jdbc.password" value="${DB_PASSWORD}"/>
 
-            <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create" />
-            <property name="jakarta.persistence.sql-load-script-source" value="data.sql" />
+            <!-- Use standard JPA schema generation property; default to 'validate' -->
 
-            <!-- configure logging -->
-            <property name="eclipselink.logging.level" value="INFO"/>
-            <property name="eclipselink.logging.level.sql" value="FINE"/>
-            <property name="eclipselink.logging.parameters" value="true"/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="${DB_SCHEMA_ACTION}"/>
+
+            <!-- SQL import script (executed when schema-generation creates the schema) -->
+            <property name="jakarta.persistence.sql-load-script-source" value="data.sql"/>
+
+            <!-- Hibernate-specific tuning (kept for runtime behavior) -->
+            <!-- Let Hibernate auto-detect the dialect for the runtime environment -->
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="false"/>
+            <property name="hibernate.jdbc.batch_size" value="20"/>
+            <property name="hibernate.order_inserts" value="true"/>
+            <property name="hibernate.order_updates" value="true"/>
+
+            <!-- Validation -->
+            <property name="hibernate.validator.apply_to_ddl" value="false"/>
+            <property name="hibernate.validator.autoregister_listeners" value="false"/>
         </properties>
     </persistence-unit>
+
 </persistence>
