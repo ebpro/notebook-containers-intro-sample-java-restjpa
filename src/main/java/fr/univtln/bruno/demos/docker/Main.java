@@ -1,8 +1,6 @@
 package fr.univtln.bruno.demos.docker;
 
-import fr.univtln.bruno.demos.docker.adapter.rest.GlobalExceptionMapper;
 import fr.univtln.bruno.demos.docker.config.AppBinder;
-import fr.univtln.bruno.demos.docker.config.AppConfig;
 
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.bridge.SLF4JBridgeHandler;
